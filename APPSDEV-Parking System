@@ -1,1 +1,106 @@
+using System;
+using System.Collections.Generic;
 
+public class ParkingSystem
+{
+    private List<ParkingSpot> parkingSpots;
+    private Dictionary<string, Vehicle> parkedVehicles;
+
+    public ParkingSystem(int motorbikeSpots, int suvVanSpots, int sedanSpots)
+    {
+        parkingSpots = new List<ParkingSpot>();
+        parkedVehicles = new Dictionary<string, Vehicle>();
+
+        for (int i = 0; i < motorbikeSpots; i++)
+        {
+            parkingSpots.Add(new ParkingSpot("Motorbike", 20.00, 5.00));
+        }
+
+        for (int i = 0; i < suvVanSpots; i++)
+        {
+            parkingSpots.Add(new ParkingSpot("SUV/Van", 40.00, 20.00));
+        }
+
+        for (int i = 0; i < sedanSpots; i++)
+        {
+            parkingSpots.Add(new ParkingSpot("Sedan", 30.00, 15.00));
+        }
+    }
+
+    public bool ParkVehicle(Vehicle vehicle)
+    {
+        ParkingSpot spot = FindAvailableSpot(vehicle.Type);
+
+        if (spot == null)
+        {
+            Console.WriteLine($"No available parking spots for {vehicle.Type} vehicles.");
+            return false;
+        }
+
+        spot.ParkVehicle(vehicle);
+        parkedVehicles.Add(vehicle.PlateNo, vehicle);
+
+        Console.WriteLine($"{vehicle.Type} with plate no {vehicle.PlateNo} parked successfully.");
+        return true;
+    }
+
+    public void UnparkVehicle(string plateNo)
+    {
+        if (!parkedVehicles.ContainsKey(plateNo))
+        {
+            Console.WriteLine($"Vehicle with plate no {plateNo} is not parked in the parking lot.");
+            return;
+        }
+
+        Vehicle vehicle = parkedVehicles[plateNo];
+        ParkingSpot spot = FindSpot(vehicle.Type, vehicle.ParkInTime);
+        double parkingTime = (DateTime.Now - vehicle.ParkInTime).TotalHours;
+        double amount = spot.CalculateAmount(parkingTime);
+
+        Console.WriteLine($"Date/Time In: {vehicle.ParkInTime}");
+        Console.WriteLine($"Out: {DateTime.Now}");
+        Console.WriteLine($"Parking Time: {parkingTime} hrs");
+        Console.WriteLine($"Amount: {amount}");
+
+        spot.UnparkVehicle();
+        parkedVehicles.Remove(plateNo);
+    }
+
+    private ParkingSpot FindAvailableSpot(string vehicleType)
+    {
+        foreach (ParkingSpot spot in parkingSpots)
+        {
+            if (spot.IsAvailable && spot.Type == vehicleType)
+            {
+                return spot;
+            }
+        }
+
+        return null;
+    }
+
+    private ParkingSpot FindSpot(string vehicleType, DateTime parkInTime)
+    {
+        foreach (ParkingSpot spot in parkingSpots)
+        {
+            if (spot.Vehicle != null && spot.Vehicle.Type == vehicleType && spot.Vehicle.ParkInTime == parkInTime)
+            {
+                return spot;
+            }
+        }
+
+        return null;
+    }
+}
+
+public class ParkingSpot
+{
+    public string Type { get; private set; }
+    public double FlagDownRate { get; private set; }
+    public double AdditionalAmountPerHour { get; private set; }
+    public Vehicle Vehicle { get; private set; }
+
+    public ParkingSpot(string type, double flagDownRate, double additionalAmountPerHour)
+    {
+        Type = type;
+        FlagDownRate = flagDownRate
